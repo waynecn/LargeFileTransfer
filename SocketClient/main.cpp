@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <WinSock2.h>
+#include <time.h>
 
 //缓存大小设置不能超过2M
 #define BUFF_SIZE (1024 * 1024)
@@ -99,10 +100,12 @@ int main(int argc, char** argv)
     }
 
     off64_t fileRecv = 0;
+    time_t start;
+    start = time(NULL);
+
     while (fileRecv < totalFileSize) {
         memset(buf, 0, BUFF_SIZE);
         iRecv = recv(s, buf, BUFF_SIZE, 0);
-        printf("iRecv:%d\n", iRecv);
         if (iRecv < 0)
         {
             printf("Recv error\n");
@@ -112,7 +115,17 @@ int main(int argc, char** argv)
             break;
         }
         fileRecv += iRecv;
-        printf("totalFileSize:%lld recv file size:%lld\n", totalFileSize, fileRecv);
+        time_t end = time(NULL);
+        time_t cost = end - start;
+        //动态计算出传输完需要用时多久
+        time_t totalTime = 0;
+        //计算出剩余时间
+        time_t leftTime = 0;
+        if (cost != 0) {
+            totalTime = totalFileSize / (fileRecv / cost);
+            leftTime = (totalFileSize - fileRecv) / (fileRecv / cost);
+        }
+        printf("totalFileSize:%lld recv file size:%lld, totalTime:%d 's, leftTime:%d 's\n", totalFileSize, fileRecv, totalTime, leftTime);
         fwrite(buf, sizeof(char), iRecv, f);
     }
     fclose(f);
