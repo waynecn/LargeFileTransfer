@@ -9,6 +9,15 @@ using namespace std;
 #define BUFF_SIZE (1024 * 1024)
 #define FILE_NAME_LENGTH 1024
 
+
+int s;                     /* socket for accepting connections    */
+int ns;                    /* socket connected to client          */
+
+int exitFunc() {
+    closesocket(s);
+    closesocket(ns);
+}
+
 off64_t getFileSize(char *filePath) {
     FILE *f;
     f = fopen(filePath, "rb");
@@ -52,12 +61,11 @@ char *getFileName(char *filePath) {
 
 int main(int argc, char **argv)
 {
+    _onexit(exitFunc);
     unsigned short port;       /* port server binds to                */
     char buff[BUFF_SIZE];              /* buffer for sending & receiving data */
     struct sockaddr_in client; /* client address information          */
     struct sockaddr_in server; /* server address information          */
-    int s;                     /* socket for accepting connections    */
-    int ns;                    /* socket connected to client          */
     int namelen;               /* length of client name               */
     char *filePath = new char[FILE_NAME_LENGTH];
 
@@ -165,9 +173,6 @@ int main(int argc, char **argv)
         }
         fclose(f);
     }
-
-    //close(ns);
-    //close(s);
 
     printf("Server ended successfully\n");
     exit(0);

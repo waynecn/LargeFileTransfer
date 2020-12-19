@@ -148,6 +148,7 @@ int main(int argc, char** argv)
         fwrite(buf, sizeof(char), iRecv, f);
     }
     fclose(f);
+    closesocket(s);
 
     printf("Client Ended Successfully\n");
     exit(0);
