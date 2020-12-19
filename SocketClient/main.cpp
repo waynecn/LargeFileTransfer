@@ -4,10 +4,13 @@
 #include <WinSock2.h>
 #include <time.h>
 
+
+using namespace std;
+
 //缓存大小设置不能超过2M
 #define BUFF_SIZE (1024 * 1024)
 
-using namespace std;
+#define FILE_NAME_LENGTH 1024
 
 /*
  * Client Main.
@@ -83,15 +86,31 @@ int main(int argc, char** argv)
     memset(buf, 0, BUFF_SIZE);
     iRecv = recv(s, buf, BUFF_SIZE, 0);
     if (iRecv < 0) {
-        printf("recv error\n");
+        printf("recv fileSize error\n");
         exit(5);
     }
     off64_t totalFileSize = atoll(buf);
     printf("totalFileSize:%lld\n", totalFileSize);
     //再接收文件名
+    memset(buf, 0, BUFF_SIZE);
+    iRecv = recv(s, buf, BUFF_SIZE, 0);
+    if (iRecv < 0) {
+        printf("recv fileName error\n");
+        exit(5);
+    }
+    char fileName[FILE_NAME_LENGTH];
+    memset(fileName, 0, FILE_NAME_LENGTH);
+    memcpy(fileName, buf, strlen(buf));
+    printf("recv fileName:%s\n", fileName);
 
     //接收文件 将文件保存到指定位置
-    char *filePath = "D:\\client\\test.exe";
+    char *filePath = new char[FILE_NAME_LENGTH];
+    memset(filePath, 0, FILE_NAME_LENGTH);
+    char *basePath = "D:\\client\\";
+    memcpy(filePath, basePath, strlen(basePath));
+    strcat(filePath, fileName);
+    printf("filePath:%s\n", filePath);
+
     FILE *f = NULL;
     f = fopen(filePath, "ab");
     if (f == NULL) {

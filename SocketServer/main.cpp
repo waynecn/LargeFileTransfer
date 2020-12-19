@@ -2,11 +2,12 @@
 #include <stdio.h>
 #include <WinSock2.h>
 
-//缓存大小设置不能超过2M
-#define BUFF_SIZE (1024 * 1024)
 
 using namespace std;
 
+//缓存大小设置不能超过2M
+#define BUFF_SIZE (1024 * 1024)
+#define FILE_NAME_LENGTH 1024
 
 off64_t getFileSize(char *filePath) {
     FILE *f;
@@ -30,16 +31,27 @@ off64_t getFileSize(char *filePath) {
     return fileSize;
 }
 
+char *getFileName(char *filePath) {
+    bool bFound = false;
+    char *buff = new char[1024];
+    memset(buff, 0, 1024);
+    while (!bFound) {
+        int lastIndex = 0;
+        for (int i = 0; i < strlen(filePath); ++i) {
+            if (filePath[i] == '\\' || filePath[i] == '/') {
+                lastIndex = i;
+            }
+        }
+        for (int i = lastIndex + 1; i < strlen(filePath); ++i) {
+            buff[i - lastIndex - 1] = filePath[i];
+        }
+        bFound = true;
+    }
+    return buff;
+}
+
 int main(int argc, char **argv)
 {
-    char *filePath = "D:\\Download\\qt-opensource-windows-x86-5.12.5.exe";
-    //char *filePath = "D:\\Download\\ideaIC-2019.3.3.exe";
-    off64_t fileSize = getFileSize(filePath);
-    printf("fileSize:%lld\n", fileSize);
-
-    WSADATA wsadata;
-    WSAStartup(0x202, &wsadata);
-
     unsigned short port;       /* port server binds to                */
     char buff[BUFF_SIZE];              /* buffer for sending & receiving data */
     struct sockaddr_in client; /* client address information          */
@@ -47,9 +59,10 @@ int main(int argc, char **argv)
     int s;                     /* socket for accepting connections    */
     int ns;                    /* socket connected to client          */
     int namelen;               /* length of client name               */
+    char *filePath = new char[FILE_NAME_LENGTH];
 
     //检查是否传入端口参数
-    if (argc != 2)
+    if (argc < 2)
     {
         fprintf(stderr, "Usage: %s port\n", argv[0]);
         exit(1);
@@ -57,6 +70,23 @@ int main(int argc, char **argv)
 
     //第一个参数是端口号
     port = (unsigned short) atoi(argv[1]);
+    //如果有第二个参数 第二个参数需要是文件的详细路径 否则需要自己指定路径
+    if (argc > 2) {
+        filePath = argv[2];
+        printf("filePath from arg:%s\n", filePath);
+    } else {
+        //char *filePath = "D:\\Download\\qt-opensource-windows-x86-5.12.5.exe";
+        //char *filePath = "D:\\Download\\ideaIC-2019.3.3.exe";
+        filePath = "D:\\Download\\settings.xml";
+    }
+
+    off64_t fileSize = getFileSize(filePath);
+    printf("fileSize:%lld\n", fileSize);
+    char *fileName = getFileName(filePath);
+    printf("fileName:%s\n", fileName);
+
+    WSADATA wsadata;
+    WSAStartup(0x202, &wsadata);
 
     //创建socket服务
     if ((s = socket(AF_INET, SOCK_STREAM, 0)) < 0)
@@ -108,6 +138,12 @@ int main(int argc, char **argv)
             printf("send fileSize to client error\n");
             exit(7);
         }
+        //再将文件名发送给客户端
+        printf("sizeof:%d strlen:%d\n", sizeof(fileName), strlen(fileName));
+        if (send(ns, fileName, strlen(fileName), 0) < 0) {
+            printf("send fileName to client error\n");
+            exit(7);
+        }
         while (sendSize < fileSize) {
             memset(buff, 0, 1024 * 1024);
             size_t iread = fread(buff, sizeof(char), BUFF_SIZE, f);
@@ -115,13 +151,13 @@ int main(int argc, char **argv)
             if (iread < 0) {
                 printf("fread error\n");
                 fclose(f);
-                exit(7);
+                break;
             }
             int iSend = send(ns, buff, iread, 0);
             if (iSend < 0) {
                 printf("send error\n");
                 fclose(f);
-                exit(7);
+                break;
             }
             sendSize += iSend;
             printf("fileSize:%lld iSend:%d sendSize:%lld\n", fileSize, iSend, sendSize);
