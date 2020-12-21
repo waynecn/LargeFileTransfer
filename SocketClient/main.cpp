@@ -12,19 +12,27 @@ using namespace std;
 
 #define FILE_NAME_LENGTH 1024
 
+int s;                     /* client socket                       */
+int exitFunc() {
+    closesocket(s);
+    return 0;
+}
+
 /*
  * Client Main.
  */
 int main(int argc, char** argv)
 {
+    _onexit(exitFunc);
+
     WSADATA wsadata;
     WSAStartup(0x202, &wsadata);
+    printf("start...\n");
 
     unsigned short port;       /* port client will connect to         */
     char buf[BUFF_SIZE];              /* data buffer for sending & receiving */
     struct hostent *hostnm;    /* server host name information        */
     struct sockaddr_in server; /* server address                      */
-    int s;                     /* client socket                       */
 
     /*
      * Check Arguments Passed. Should be hostname and port.
@@ -63,18 +71,15 @@ int main(int argc, char** argv)
     server.sin_port        = htons(port);
     server.sin_addr.s_addr = *((unsigned long *)hostnm->h_addr);
 
-    /*
-     * Get a stream socket.
-     */
+    //创建socket
     if ((s = socket(AF_INET, SOCK_STREAM, 0)) < 0)
     {
         printf("Socket error\n");
         exit(3);
     }
 
-    /*
-     * Connect to the server.
-     */
+    //准备连接服务端
+    printf("ready to connet to server ...\n");
     if (connect(s, (struct sockaddr *)&server, sizeof(server)) < 0)
     {
         printf("Connect error\n");
@@ -112,7 +117,7 @@ int main(int argc, char** argv)
     printf("filePath:%s\n", filePath);
 
     FILE *f = NULL;
-    f = fopen(filePath, "ab");
+    f = fopen(filePath, "wb");
     if (f == NULL) {
         printf("file:%s doesn't exist and failed to create\n", filePath);
         exit(5);
@@ -148,9 +153,7 @@ int main(int argc, char** argv)
         fwrite(buf, sizeof(char), iRecv, f);
     }
     fclose(f);
-    closesocket(s);
 
     printf("Client Ended Successfully\n");
     exit(0);
-
 }
