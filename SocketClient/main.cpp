@@ -29,23 +29,19 @@ int main(int argc, char** argv)
     WSAStartup(0x202, &wsadata);
     printf("start...\n");
 
-    unsigned short port;       /* port client will connect to         */
-    char buf[BUFF_SIZE];              /* data buffer for sending & receiving */
-    struct hostent *hostnm;    /* server host name information        */
-    struct sockaddr_in server; /* server address                      */
+    unsigned short port;       //服务端口
+    char buf[BUFF_SIZE];       //缓存
+    struct hostent *hostnm;    //服务地址信息
+    struct sockaddr_in server; //服务sockaddr信息
 
-    /*
-     * Check Arguments Passed. Should be hostname and port.
-     */
+    //传入两个参数，顺序是服务器地址和端口
     if (argc != 3)
     {
         fprintf(stderr, "Usage: %s hostname port\n", argv[0]);
         exit(1);
     }
 
-    /*
-     * The host name is the first argument. Get the server address.
-     */
+    //第一个参数是服务器地址
     hostnm = gethostbyname(argv[1]);
     if (hostnm == (struct hostent *) 0)
     {
@@ -53,20 +49,11 @@ int main(int argc, char** argv)
         exit(2);
     }
 
-    /*
-     * The port is the second argument.
-     */
+    //第二个参数是端口号
     port = (unsigned short) atoi(argv[2]);
 
-    /*
-     * Put a message into the buffer.
-     */
-    strcpy(buf, "the message");
-
-    /*
-     * Put the server information into the server structure.
-     * The port must be put into network byte order.
-     */
+    //put the server information into the server structure.
+    //The port must be put into network byte order.
     server.sin_family      = AF_INET;
     server.sin_port        = htons(port);
     server.sin_addr.s_addr = *((unsigned long *)hostnm->h_addr);
